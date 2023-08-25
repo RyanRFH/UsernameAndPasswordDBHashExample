@@ -1,9 +1,12 @@
 const User = require ("../users/model")
-
+const jwt = require("jsonwebtoken")
 const bcrypt = require ("bcrypt")
 
+
+//Amount of times to run the hash
 const saltRounds = process.env.SALT_ROUNDS
 
+//Turn password into hash
 const hashPass = async (req, res, next) => {
 
     try {
@@ -20,16 +23,17 @@ const hashPass = async (req, res, next) => {
 
 }
 
+//Compare given password to databse hashed password
 const comparePass = async (req, res, next) => {
 
     try {
-        let user = await User.findOne({where: {username: req.body.username}})
+        req.user = await User.findOne({where: {username: req.body.username}})
 
-        if (user == null) {
+        if (req.user == null) {
             throw new Error("Usernames not found")
         }
 
-        let match = await bcrypt.compare(req.body.password, user.password)
+        let match = await bcrypt.compare(req.body.password, req.user.password)
         console.log("Do the passwords match = ", match)
 
 
@@ -47,7 +51,32 @@ const comparePass = async (req, res, next) => {
 
 }
 
+const tokenCheck = async (req, res, next) => {
+    try {
+        const token = req.header("Authorization")
+        console.log("tokenCheck token = ", token)
+        
+        const decodedToken = jwt.verify(token, process.env.SECRET)
+
+        console.log("decoded token = ", token)
+
+        const user = await User.findOne({where: {id: decodedToken.id}})
+        console.log(user)
+
+        if (user === null) {
+            throw new Error("User is not authorised")
+        }
+
+        req.authUser = user
+        next()
+    } catch (error) {
+        res.status(501).json({errorMessage: error.message, error: error})
+    }
+
+}
+
 module.exports = {
     hashPass,
-    comparePass
+    comparePass,
+    tokenCheck
 }
