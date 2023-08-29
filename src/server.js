@@ -9,7 +9,7 @@ const User = require("./users/model")
 const bookRouter = require ("./books/routes")
 const Book = require("./books/model")
 
-const port = process.env.PORT || 5002
+const port = process.env.PORT || 5001
 
 const app = express()
 
@@ -33,8 +33,7 @@ const syncTables = () => {
 
 app.get("/health", (req, res) => {
     res.status(200).json({message: "API is working"})
-}
-)
+})
 
 app.listen(port, () => {
     syncTables()
